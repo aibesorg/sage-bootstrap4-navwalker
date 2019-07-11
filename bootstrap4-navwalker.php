@@ -146,6 +146,13 @@ if (class_exists('\Walker_Nav_Menu')) {
                         $attributes .= ' ' . $attr . '="' . $value . '"';
                     }
                 }
+
+                /** This filter is documented in wp-includes/post-template.php */
+                $title = apply_filters('the_title', $item->title, $item->ID);
+
+                /** Filters a menu item's title. */
+                $title = apply_filters('nav_menu_item_title', $title, $item, $args, $depth);
+
                 $item_output = $args->before;
                 $item_output .= '<a'. $attributes .'>';
 
@@ -159,9 +166,11 @@ if (class_exists('\Walker_Nav_Menu')) {
                 if (! empty($item->attr_title)) {
                     $item_output .= '<span class="' . esc_attr($item->attr_title) . '"></span>&nbsp;';
                 }
-                $item_output .= $args->link_before . apply_filters('the_title', $item->title, $item->ID) . $args->link_after;
+
+                $item_output .= $args->link_before . $title . $args->link_after;
                 $item_output .= '</a>';
                 $item_output .= $args->after;
+
                 $output .= apply_filters('walker_nav_menu_start_el', $item_output, $item, $depth, $args);
             }
         }
