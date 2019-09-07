@@ -1,4 +1,5 @@
 <?php
+
 namespace App;
 
 /**
@@ -21,17 +22,29 @@ namespace App;
 if (class_exists('\Walker_Nav_Menu')) {
     class wp_bootstrap4_navwalker extends \Walker_Nav_Menu
     {
+        public $item = null;
+
+        private function setCurrentItem($item, $depth = 0, $id = 0)
+        {
+            if ($this->item == null) {
+                $this->item = $item;
+            } else if ($this->item->ID != $item->ID && $depth == 0) {
+                $this->item = $item;
+            }
+        }
+
         /**
-     * @see Walker::start_lvl()
-     * @since 3.0.0
-     *
-     * @param string $output Passed by reference. Used to append additional content.
-     * @param int $depth Depth of page. Used for padding.
-     */
+         * @see Walker::start_lvl()
+         * @since 3.0.0
+         *
+         * @param string $output Passed by reference. Used to append additional content.
+         * @param int $depth Depth of page. Used for padding.
+         */
         public function start_lvl(&$output, $depth = 0, $args = array())
         {
             $indent = str_repeat("\t", $depth);
             $output .= "\n$indent<div role=\"menu\" class=\" dropdown-menu\">\n";
+            $output = apply_filters('dropdown_start_lvl', $output, $depth, $args, $this);
         }
         /**
          * Ends the list of after the elements are added.
@@ -48,6 +61,7 @@ if (class_exists('\Walker_Nav_Menu')) {
         {
             $indent = str_repeat("\t", $depth);
             $output .= "$indent</div>\n";
+            $output = apply_filters('dropdown_end_lvl', $output, $depth, $args, $this);
         }
         /**
          * Start the element output.
@@ -86,6 +100,10 @@ if (class_exists('\Walker_Nav_Menu')) {
          */
         public function start_el(&$output, $item, $depth = 0, $args = array(), $id = 0)
         {
+            $this->setCurrentItem($item, $depth, $id);
+
+            $this->item = $item;
+
             $indent = ($depth) ? str_repeat("\t", $depth) : '';
             /**
              * Dividers, Headers or Disabled
@@ -106,11 +124,11 @@ if (class_exists('\Walker_Nav_Menu')) {
                 $classes = empty($item->classes) ? array() : (array) $item->classes;
 
                 $atts = array();
-                $atts['title']  = ! empty($item->title)	? $item->title	: '';
-                $atts['target'] = ! empty($item->target)	? $item->target	: '';
-                $atts['rel']    = ! empty($item->xfn)		? $item->xfn	: '';
-                $atts['href'] = ! empty($item->url) ? $item->url : '';
-                $id = apply_filters('nav_menu_item_id', 'menu-item-'. $item->ID, $item, $args);
+                $atts['title']  = !empty($item->title)    ? $item->title    : '';
+                $atts['target'] = !empty($item->target)    ? $item->target    : '';
+                $atts['rel']    = !empty($item->xfn)        ? $item->xfn    : '';
+                $atts['href'] = !empty($item->url) ? $item->url : '';
+                $id = apply_filters('nav_menu_item_id', 'menu-item-' . $item->ID, $item, $args);
 
                 if (in_array('current-menu-item', $classes)) {
                     $classes[] = ' active';
@@ -118,19 +136,19 @@ if (class_exists('\Walker_Nav_Menu')) {
                 if ($depth === 0) {
                     $classes[] = 'nav-item';
                     $classes[] = 'nav-item-' . $item->ID;
-                    $atts['class']			= 'nav-link';
+                    $atts['class']            = 'nav-link';
                     if ($args->has_children && $args->depth != 1) {
                         $classes[] = ' dropdown';
-                        $atts['href']   		= '#';
-                        $atts['data-toggle']	= 'dropdown';
-                        $atts['class']			= 'dropdown-toggle nav-link';
-                        $atts['role']	= 'button';
-                        $atts['aria-haspopup']	= 'true';
+                        $atts['href']           = '#';
+                        $atts['data-toggle']    = 'dropdown';
+                        $atts['class']            = 'dropdown-toggle nav-link';
+                        $atts['role']    = 'button';
+                        $atts['aria-haspopup']    = 'true';
                     }
                     $class_names = join(' ', apply_filters('nav_menu_css_class', array_filter($classes), $item, $args));
                     $class_names = $class_names ? ' class="' . esc_attr($class_names) . '"' : '';
                     $id = $id ? ' id="' . esc_attr($id) . '"' : '';
-                    $output .= $indent . '<li' . $id . $value . $class_names .'>';
+                    $output .= $indent . '<li' . $id . $value . $class_names . '>';
                 } else {
                     $classes[] = 'dropdown-item';
                     $class_names = join(' ', apply_filters('nav_menu_css_class', array_filter($classes), $item, $args));
@@ -141,7 +159,7 @@ if (class_exists('\Walker_Nav_Menu')) {
                 $atts = apply_filters('nav_menu_link_attributes', $atts, $item, $args);
                 $attributes = '';
                 foreach ($atts as $attr => $value) {
-                    if (! empty($value)) {
+                    if (!empty($value)) {
                         $value = ('href' === $attr) ? esc_url($value) : esc_attr($value);
                         $attributes .= ' ' . $attr . '="' . $value . '"';
                     }
@@ -154,7 +172,7 @@ if (class_exists('\Walker_Nav_Menu')) {
                 $title = apply_filters('nav_menu_item_title', $title, $item, $args, $depth);
 
                 $item_output = $args->before;
-                $item_output .= '<a'. $attributes .'>';
+                $item_output .= '<a' . $attributes . '>';
 
                 /*
                 * Icons
@@ -163,7 +181,7 @@ if (class_exists('\Walker_Nav_Menu')) {
                 * if there is a value in the attr_title property. If the attr_title
                 * property is NOT null we apply it as the class name for the icon
                 */
-                if (! empty($item->attr_title)) {
+                if (!empty($item->attr_title)) {
                     $item_output .= '<span class="' . esc_attr($item->attr_title) . '"></span>&nbsp;';
                 }
 
@@ -196,13 +214,13 @@ if (class_exists('\Walker_Nav_Menu')) {
          */
         public function display_element($element, &$children_elements, $max_depth, $depth, $args, &$output)
         {
-            if (! $element) {
+            if (!$element) {
                 return;
             }
             $id_field = $this->db_fields['id'];
             // Display this element.
             if (is_object($args[0])) {
-                $args[0]->has_children = ! empty($children_elements[ $element->$id_field ]);
+                $args[0]->has_children = !empty($children_elements[$element->$id_field]);
             }
             parent::display_element($element, $children_elements, $max_depth, $depth, $args, $output);
         }
